@@ -1,6 +1,8 @@
-all:
-	gcc main.c -o main.o
+MODULE_NAME  = OS_PJ1
+obj-m       := $(MODULE_NAME).o   
 
-.PHONY: clean
+all:
+	gcc main.c -o user.o
+	make -C /lib/modules/$(shell uname -r)/build M=$(shell pwd) modules
 clean:
-	rm *.o
+	make -C /lib/modules/$(shell uname -r)/build M=$(shell pwd) clean

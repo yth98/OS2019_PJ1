@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sched.h>
 
 enum Policy {FIFO, RR, SJF, PSJF};
 
@@ -12,8 +13,6 @@ typedef struct process {
     int R, T;
     char N[33];
 } t_proc;
-
-void t_unit() { volatile unsigned long i; for(i=0;i<1000000UL;i++); }
 
 int main() {
     enum Policy S;
@@ -36,14 +35,9 @@ int main() {
         pid_t p = fork();
         // in child process, run the process for Y time units.
         if (p == 0) {
-            struct timespec then, now;
-            //getnstimeofday(&then);
             int Y = procs[i]->T;
-            while (Y--) t_unit();
-            //getnstimeofday(&now);
-            // https://stackoverflow.com/questions/8304259
-            //printk("<6>[Project1] %d %lld.%.9ld %lld.%.9ld\n", getpid(), (long long)then.tv_sec, then.tv_nsec, (long long)now.tv_sec, now.tv_nsec);
-            printf("<6>[Project1] %d %lld.%.9ld %lld.%.9ld\n", getpid(), (long long)then.tv_sec, then.tv_nsec, (long long)now.tv_sec, now.tv_nsec);
+            pid_t pid = getpid();
+            /* do something what to tell kernel module opening a child process */
             return 0;
         }
         // in main process, record pids of children.
