@@ -1,3 +1,5 @@
+// OS_PJ1.c : the kernel module recording execution time of child processes
+// Operating System 2019, NTU CSIE
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/unistd.h>

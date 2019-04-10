@@ -1,18 +1,6 @@
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sched.h>
-
-enum Policy {FIFO, RR, SJF, PSJF};
-
-typedef struct process {
-    pid_t pid;
-    int R, T;
-    char N[33];
-} t_proc;
+// main.c : the Process Scheduler in user mode
+// Operating System 2019, NTU CSIE
+#include "main.h"
 
 void t_unit () { volatile unsigned long i; for(i=0;i<1000000UL;i++); }
 
