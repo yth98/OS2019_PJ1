@@ -39,9 +39,20 @@ int main() {
             // If goes here, I'm a child process!
             int Y = procs[i]->T;
             pid_t pid = getpid();
-            // TODO: inform the kernel module I'm start.
+            FILE *proc;
+            char instr[7];
+            // inform the kernel module I'm start.
+            proc = fopen("/proc/ospj1_proc", "a");
+            sprintf(instr, "S%d", pid);
+            fwrite(instr, sizeof(char), strlen(instr), proc);
+            fclose(proc);
+            // run for Y units.
             while (Y--) t_unit();
-            // TODO: inform the kernel module I'm end.
+            // inform the kernel module I'm end.
+            proc = fopen("/proc/ospj1_proc", "a");
+            sprintf(instr, "F%d", pid);
+            fwrite(instr, sizeof(char), strlen(instr), proc);
+            fclose(proc);
             return 0;
         }
         // in main process, record pids of children.
