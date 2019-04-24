@@ -1,6 +1,7 @@
 // main.c : the Process Scheduler in user mode
 // Operating System 2019, NTU CSIE
 #include "main.h"
+#include "proc_sort.h"
 
 void t_unit () { volatile unsigned long i; for(i=0;i<1000000UL;i++); }
 
@@ -27,11 +28,9 @@ int main() {
         scanf("%s %d %d", procs[i]->N, &(procs[i]->R), &(procs[i]->T));
     }
 
+    // sort procs by thier ready time R
+    proc_sort(procs, N);
     // TODO: alter the loop to timeunit as index.
-    // sort procs by thier ready time R ?
-    //     1. but the order of process name N will be missing.
-    //        we should print them out in the end.
-    //     2. but there's no STL sort() in C language.
     for (long i=0;i<N;++i) {
         pid_t p = fork();
         // in child process, run the process for Y time units.
