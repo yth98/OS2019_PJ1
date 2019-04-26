@@ -10,17 +10,25 @@
 #include <string.h>
 #include <unistd.h>
 #include <sched.h>
+#include <errno.h>
 
-enum Policy {FIFO, RR, SJF, PSJF};
+#define FIFO    0
+#define RR      1
+#define SJF     2
+#define PSJF    3
 
 typedef struct process {
     pid_t pid;
+    char N[64];
     int R, T;
-    char N[33];
-} t_proc;
+} proc_t;
 
-void t_unit ();
+void err_sys(char *);
 
-int main();
+int cmp(void, void);
+
+void unit_t(void);
+
+int main(int, char **);
 
 #endif

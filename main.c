@@ -1,35 +1,55 @@
 // main.c : the Process Scheduler in user mode
 // Operating System 2019, NTU CSIE
 #include "main.h"
-#include "proc_sort.h"
 
-void t_unit () { volatile unsigned long i; for(i=0;i<1000000UL;i++); }
+void err_sys(char *s) {
+    perror(s);
+    exit(1);
+}
 
-int main() {
+int cmp(const void *a, const void *b) {
+	return ((proc_t *) a)->R - ((proc_t *) b)->R;
+}
+
+void unit_t(void) {
+    volatile unsigned long i;
+    for (i = 0; i < 1000000UL; i++);
+};
+
+int main(int argc, char const *argv[]) {
     // A child created via fork(2) inherits its parent's CPU affinity mask.
     cpu_set_t cmask;
     CPU_ZERO(&cmask);
     CPU_SET(0, &cmask); // only use cpu #0
-    sched_setaffinity(getpid(), sizeof(cmask), &cmask);
+    if (sched_setaffinity(getpid(), sizeof(cmask), &cmask) < 0)
+        err_sys("sched_setaffinity");
 
-    enum Policy S;
-    char s[5];
-    scanf("%s", s);
-    if      (strcmp(s, "FIFO")==0) S = FIFO;
-    else if (strcmp(s, "RR")==0)   S = RR;
-    else if (strcmp(s, "SJF")==0)  S = SJF;
-    else if (strcmp(s, "PSJF")==0) S = PSJF;
+    char S[8];
+    int policy;
+    scanf("%s", S);
+    if (strcmp(S, "FIFO") == 0)
+        policy = FIFO;
+    else if (strcmp(S, "RR") == 0)
+        policy = RR;
+    else if (strcmp(S, "SJF") == 0)
+        policy = SJF;
+    else if (strcmp(S, "PSJF") == 0)
+        policy = PSJF;
+    else {
+        fprintf(stderr, "Invalid policy.\n");
+        exit(1);
+    }
 
     int N;
     scanf("%d", &N);
-    struct process* procs[N];
-    for (long i=0;i<N;++i) {
-        procs[i] = malloc(sizeof(t_proc));
-        scanf("%s %d %d", procs[i]->N, &(procs[i]->R), &(procs[i]->T));
+    proc_t *proc;
+    proc = (proc_t *) malloc(N * sizeof(proc_t));
+    for (int i = 0; i < N; i++) {
+        proc[i].pid = -1;
+        scanf("%s %d %d", proc[i].N, &proc[i].R, &proc[i].T);
     }
+    qsort(proc, N, sizeof(proc_t), cmp);
 
-    // sort procs by thier ready time R
-    proc_sort(procs, N);
     // TODO: alter the loop to timeunit as index.
     for (long i=0;i<N;++i) {
         pid_t p = fork();
