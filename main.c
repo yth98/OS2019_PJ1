@@ -14,9 +14,58 @@ int cmp(const void *a, const void *b) {
 void unit_t(void) {
     volatile unsigned long i;
     for (i = 0; i < 1000000UL; i++);
+    return;
 };
 
-int main(int argc, char const *argv[]) {
+pid_t create_proc(proc_t proc) {
+    pid_t pid = fork();
+    if (pid < 0)
+        err_sys("fork");
+    else if (pid == 0) {
+        pid_t mypid = getpid();
+        printf("%s %d\n", proc.N, mypid);
+
+        FILE *fp;
+        char instr[8];
+
+        // Inform the kernel module I've started.
+        fp = fopen("/proc/ospj1_proc", "a");
+        sprintf(instr, "S%d", mypid);
+        fwrite(instr, sizeof(char), strlen(instr), fp);
+        fclose(fp);
+
+        for (int i = 0; i < proc.T; i++)
+            unit_t();
+
+        // Inform the kernel module I've ended.
+        fp = fopen("/proc/ospj1_proc", "a");
+        sprintf(instr, "F%d", mypid);
+        fwrite(instr, sizeof(char), strlen(instr), fp);
+        fclose(fp);
+
+        exit(0);
+    }
+    else
+        return pid;
+}
+
+void set_high_priority(pid_t pid) {
+    struct sched_param param;
+    param.sched_priority = 0;
+    if (sched_setscheduler(pid, SCHED_OTHER, &param) < 0)
+        err_sys("sched_setscheduler");
+    return;
+}
+
+void set_low_priority(pid_t pid) {
+    struct sched_param param;
+    param.sched_priority = 0;
+    if (sched_setscheduler(pid, SCHED_IDLE, &param) < 0)
+        err_sys("sched_setscheduler");
+    return;
+}
+
+int main(int argc, char *argv[]) {
     // A child created via fork(2) inherits its parent's CPU affinity mask.
     cpu_set_t cmask;
     CPU_ZERO(&cmask);
@@ -50,43 +99,17 @@ int main(int argc, char const *argv[]) {
     }
     qsort(proc, N, sizeof(proc_t), cmp);
 
-    // TODO: alter the loop to timeunit as index.
-    for (long i=0;i<N;++i) {
-        pid_t p = fork();
-        // in child process, run the process for Y time units.
-        if (p == 0) {
-            // If goes here, I'm a child process!
-            int Y = procs[i]->T;
-            pid_t pid = getpid();
-            FILE *proc;
-            char instr[7];
-            // inform the kernel module I'm start.
-            proc = fopen("/proc/ospj1_proc", "a");
-            sprintf(instr, "S%d", pid);
-            fwrite(instr, sizeof(char), strlen(instr), proc);
-            fclose(proc);
-            // run for Y units.
-            while (Y--) t_unit();
-            // inform the kernel module I'm end.
-            proc = fopen("/proc/ospj1_proc", "a");
-            sprintf(instr, "F%d", pid);
-            fwrite(instr, sizeof(char), strlen(instr), proc);
-            fclose(proc);
-            return 0;
-        }
-        // in main process, record pids of children.
-        procs[i]->pid = p;
-        // in main process, specify each child's policy and param.
-        // TODO: different actions with different S. ## The hardest part ##.
-        struct sched_param spar;
-        spar.sched_priority = 99;
-        sched_setscheduler(p, SCHED_FIFO, &spar);
-        // after we adjusted timeunit as index, uncomment the following line:
-        //t_unit();
-    }
+    set_high_priority(getpid());
 
-    for (long i=0;i<N;++i)
-        printf("%s %d\n", procs[i]->N, procs[i]->pid);
+    int time = 0; // current time
+    int last = 0; // last context switch time
+    int running = -1; // running process pid, -1 if no running process
+    int finished = 0; // number of finished jobs
+
+    while (1) {
+        // 好想直接複製貼上==
+        break;
+    }
 
     return 0;
 }

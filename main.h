@@ -25,9 +25,15 @@ typedef struct process {
 
 void err_sys(char *);
 
-int cmp(void, void);
+int cmp(const void *, const void *);
 
 void unit_t(void);
+
+pid_t create_proc(proc_t);
+
+void set_high_priority(pid_t);
+
+void set_low_priority(pid_t);
 
 int main(int, char **);
 
