@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sched.h>
 #include <errno.h>
 
@@ -34,6 +36,8 @@ pid_t create_proc(proc_t);
 void set_high_priority(pid_t);
 
 void set_low_priority(pid_t);
+
+int pick_job(proc_t *, int, int, int, int, int);
 
 int main(int, char **);
 

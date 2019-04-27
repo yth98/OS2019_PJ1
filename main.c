@@ -8,7 +8,7 @@ void err_sys(char *s) {
 }
 
 int cmp(const void *a, const void *b) {
-	return ((proc_t *) a)->R - ((proc_t *) b)->R;
+    return ((proc_t *) a)->R - ((proc_t *) b)->R;
 }
 
 void unit_t(void) {
@@ -65,6 +65,10 @@ void set_low_priority(pid_t pid) {
     return;
 }
 
+int pick_job(proc_t *proc, int N, int policy, int time, int last, int running) {
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     // A child created via fork(2) inherits its parent's CPU affinity mask.
     cpu_set_t cmask;
@@ -105,10 +109,34 @@ int main(int argc, char *argv[]) {
     int last = 0; // last context switch time
     int running = -1; // running process pid, -1 if no running process
     int finished = 0; // number of finished jobs
+    int next = -1; // next job to execute
 
     while (1) {
         // 好想直接複製貼上==
-        break;
+        if (running != -1 && proc[running].T == 0) {
+            waitpid(proc[running].pid, NULL, 0);
+            running = -1;
+            finished += 1;
+            if (finished == N)
+                break;
+        }
+        for (int i = 0; i < N; i++)
+            if (proc[i].R == time) {
+                proc[i].pid = create_proc(proc[i]);
+                set_low_priority(proc[i].pid);
+            }
+        next = pick_job(proc, N, policy, time, last, running);
+        if (next != -1)
+            if (next != running) {
+                set_low_priority(running);
+                set_high_priority(next);
+                running = next;
+                last = time;
+            }
+        if (running != -1)
+            proc[running].T -= 1;
+        time += 1;
+        unit_t();
     }
 
     return 0;
