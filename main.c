@@ -82,7 +82,7 @@ int pick_job(proc_t *proc, int N, int policy, int time, int last, int running) {
         if (running != -1) {
             if ((time - last) % 500 == 0) {
                 pick = (running + 1) % N;
-                while (proc[pick].pid != -1)
+                while (proc[pick].pid == -1)
                     pick = (pick + 1) % N;
             }
             else
