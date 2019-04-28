@@ -66,7 +66,44 @@ void set_low_priority(pid_t pid) {
 }
 
 int pick_job(proc_t *proc, int N, int policy, int time, int last, int running) {
-    return 0;
+    int pick = -1;
+    if (policy == FIFO) {
+        if (running != -1)
+            return running;
+        for (int i = 0; i < N; i++)
+            if (proc[i].pid != -1)
+                return i;
+    }
+    if (policy == RR) {
+        if (running != -1) {
+            if ((time - last) % 500 == 0) {
+                pick = (running + 1) % N;
+                while (proc[pick].pid != -1)
+                    pick = (pick + 1) % N;
+            }
+            else
+                return running;
+        }
+        else
+            for (int i = 0; i < N; i++)
+                if (proc[i].pid != -1)
+                    return i;
+    }
+    if (policy == SJF) {
+        if (running != -1)
+            return running;
+        for (int i = 0; i < N; i++)
+            if (proc[i].pid != -1)
+                if (pick == -1 || proc[i].T < proc[pick].T)
+                    pick = i;
+    }
+    if (policy == PSJF) {
+        for (int i = 0; i < N; i++)
+            if (proc[i].pid != -1)
+                if (pick == -1 || proc[i].T < proc[pick].T)
+                    pick = i;
+    }
+    return pick;
 }
 
 int main(int argc, char *argv[]) {
@@ -115,6 +152,7 @@ int main(int argc, char *argv[]) {
         // 好想直接複製貼上==
         if (running != -1 && proc[running].T == 0) {
             waitpid(proc[running].pid, NULL, 0);
+            proc[running].pid == -1;
             running = -1;
             finished += 1;
             if (finished == N)
@@ -126,13 +164,12 @@ int main(int argc, char *argv[]) {
                 set_low_priority(proc[i].pid);
             }
         next = pick_job(proc, N, policy, time, last, running);
-        if (next != -1)
-            if (next != running) {
-                set_low_priority(running);
-                set_high_priority(next);
-                running = next;
-                last = time;
-            }
+        if (next != -1 && next != running) {
+            set_low_priority(proc[running].pid);
+            set_high_priority(proc[next].pid);
+            running = next;
+            last = time;
+        }
         if (running != -1)
             proc[running].T -= 1;
         time += 1;
