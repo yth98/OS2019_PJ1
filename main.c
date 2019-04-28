@@ -52,16 +52,20 @@ pid_t create_proc(proc_t proc) {
 void set_high_priority(pid_t pid) {
     struct sched_param param;
     param.sched_priority = 0;
-    if (sched_setscheduler(pid, SCHED_OTHER, &param) < 0)
-        err_sys("sched_setscheduler");
+    if (sched_setscheduler(pid, SCHED_OTHER, &param) < 0) {
+        fprintf(stderr, "%d\n", pid);
+        err_sys("sched_setscheduler (high)");
+    }
     return;
 }
 
 void set_low_priority(pid_t pid) {
     struct sched_param param;
     param.sched_priority = 0;
-    if (sched_setscheduler(pid, SCHED_IDLE, &param) < 0)
-        err_sys("sched_setscheduler");
+    if (sched_setscheduler(pid, SCHED_IDLE, &param) < 0) {
+        fprintf(stderr, "%d\n", pid);
+        err_sys("sched_setscheduler (low)");
+    }
     return;
 }
 
@@ -152,7 +156,7 @@ int main(int argc, char *argv[]) {
         // 好想直接複製貼上==
         if (running != -1 && proc[running].T == 0) {
             waitpid(proc[running].pid, NULL, 0);
-            proc[running].pid == -1;
+            proc[running].pid = -1;
             running = -1;
             finished += 1;
             if (finished == N)
