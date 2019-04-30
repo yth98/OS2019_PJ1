@@ -325,9 +325,9 @@ P4 1500 500&#x09;|&#x09;P4 2994
 [ 7129.316196] [Project1] 2993 1556651651.642796241 1556651654.317299425
 [ 7132.435833] [Project1] 2994 1556651654.299885950 1556651657.436970097
 
+</pre>
 
 ### PSJF
-</pre>
 #### PSJF_1
 <pre>
 PSJF&#x09;&#x09;|
@@ -342,7 +342,7 @@ P4 3000 3000&#x09;|&#x09;P4 2675
 [ 5525.699942] [Project1] 2662 1556650030.075950457 1556650050.684235632
 [ 5543.211257] [Project1] 2672 1556650053.304243842 1556650068.195629435
 [ 5554.340028] [Project1] 2675 1556650070.780153164 1556650079.324449134
-</pre></pre>
+</pre>
 
 #### PSJF_2
 <pre>
@@ -360,7 +360,7 @@ P5 7000 1000&#x09;|&#x09;P5 2697
 [ 5667.294999] [Project1] 2691 1556650175.755877630 1556650192.279949176
 [ 5675.774240] [Project1] 2695 1556650195.063935989 1556650200.759231666
 [ 5685.373243] [Project1] 2697 1556650206.784147472 1556650210.358281520
-</pre></pre>
+</pre>
 
 #### PSJF_3
 <pre>
@@ -376,7 +376,7 @@ P4 1500 500&#x09;|&#x09;P4 2715
 [ 5743.492361] [Project1] 2712 1556650267.052309799 1556650268.477691846
 [ 5746.340599] [Project1] 2714 1556650269.788137162 1556650271.325942844
 [ 5749.060595] [Project1] 2715 1556650272.679942169 1556650274.045954943
-</pre></pre>
+</pre>
 
 #### PSJF_4
 <pre>
@@ -392,7 +392,7 @@ P4 200 4000&#x09;|&#x09;P4 2732
 [ 5798.343498] [Project1] 2723 1556650319.696099173 1556650323.329112083
 [ 5828.526605] [Project1] 2732 1556650324.160471130 1556650353.512379866
 [ 5852.635436] [Project1] 2721 1556650312.528873564 1556650377.621338400
-</pre></pre>
+</pre>
 
 #### PSJF_5
 <pre>
@@ -413,6 +413,12 @@ P5 200 7000&#x09;|&#x09;P3 2758
 </pre>
 
 ## 結果分析 Result analysis
+
+In FIFO_1, RR_1, and other sets where multiple process get ready at the same time, our scheduler seems to mess up and sees them as not simultaneously ready. But in sets like RR_3 and SJF_1, the orders in the output are the same as theory.
+
+For the finish time, the results of most sets are acceptable. However, in FIFO_1 and RR_1(again), the first process seem to finish earlier than expext(or other processes finish later).
+
+Most problem occurs when process having the same ready time. This may due to the sorting we apply to the processes. If we apply better sorting algorithm(like stable ones), these issues might be handled.
 
 ## 組員貢獻 Contributions
 
