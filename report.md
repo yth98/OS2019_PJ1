@@ -7,7 +7,6 @@
 The main process first reads in the parameters, and then fork() out several child process at their `ready time R` with specified `time units T` and `CPU affinity`.
 
 After each child was forked, the main process sets its `sched policy` and `sched_priority`.
-In PSJF policy, sched_setscheduler() might be called multiple times to make it preemptive.
 
 ### Kernel Module : OS_PJ1.c --> OS_PJ1.ko
 
@@ -22,7 +21,7 @@ The kernel module should record its start and finish time respectively, and prin
 
     make
     sudo insmod ./OS_PJ1.ko
-    ./user.o
+    sudo ./user.o
 
     sudo rmmod OS_PJ1
 
@@ -31,3 +30,15 @@ The kernel module should record its start and finish time respectively, and prin
 ## 結果分析 Result analysis
 
 ## 組員貢獻 Contributions
+
+B04201007：
+
+B04201020：
+
+B04201021：
+
+B04201043：
+
+B05902028：
+
+B06901031：
