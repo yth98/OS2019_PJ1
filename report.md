@@ -422,14 +422,14 @@ Most problem occurs when process having the same ready time. This may due to the
 
 ## 組員貢獻 Contributions
 
-B04201007：
+- B04201007：write report.md
 
-B04201020：
+- B04201020：help debugging, collect results
 
-B04201021：
+- B04201021：help debugging, collect results
 
-B04201043：
+- B04201043：write report.md
 
-B05902028：
+- B05902028：complete the majority of main
 
-B06901031：
+- B06901031：build kernel module, structure of project
