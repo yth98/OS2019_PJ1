@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/syscall.h>
+#include <time.h>
 #include <sched.h>
 #include <errno.h>
 
@@ -18,6 +20,8 @@
 #define RR      1
 #define SJF     2
 #define PSJF    3
+
+#define GETTIME __NR_clock_gettime // sys_clock_gettime
 
 typedef struct process {
     pid_t pid;

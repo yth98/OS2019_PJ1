@@ -26,21 +26,22 @@ pid_t create_proc(proc_t proc) {
         printf("%s %d\n", proc.N, mypid);
 
         FILE *fp;
-        char instr[8];
+        char msg[256];
+        struct timespec TS;
 
-        // Inform the kernel module I've started.
-        fp = fopen("/proc/ospj1_proc", "a");
-        sprintf(instr, "S%d", mypid);
-        fwrite(instr, sizeof(char), strlen(instr), fp);
-        fclose(fp);
+        // Record start time
+        syscall(GETTIME, CLOCK_REALTIME, &TS);
+        sprintf(msg, "[Project1] %d %lld.%.9ld", mypid, (long long)TS.tv_sec, TS.tv_nsec);
 
         for (int i = 0; i < proc.T; i++)
             unit_t();
 
-        // Inform the kernel module I've ended.
-        fp = fopen("/proc/ospj1_proc", "a");
-        sprintf(instr, "F%d", mypid);
-        fwrite(instr, sizeof(char), strlen(instr), fp);
+        // Record end time
+        syscall(GETTIME, CLOCK_REALTIME, &TS);
+        sprintf(msg, "%s %lld.%.9ld\n", msg, (long long)TS.tv_sec, TS.tv_nsec);
+
+        fp = fopen("/dev/kmsg", "a");
+        fprintf(fp, "%s", msg);
         fclose(fp);
 
         exit(0);
@@ -129,10 +130,8 @@ int main(int argc, char *argv[]) {
         policy = SJF;
     else if (strcmp(S, "PSJF") == 0)
         policy = PSJF;
-    else {
-        fprintf(stderr, "Invalid policy.\n");
-        exit(1);
-    }
+    else
+        err_sys("Invalid policy.");
 
     int N;
     scanf("%d", &N);
@@ -142,7 +141,7 @@ int main(int argc, char *argv[]) {
         proc[i].pid = -1;
         scanf("%s %d %d", proc[i].N, &proc[i].R, &proc[i].T);
     }
-    qsort(proc, N, sizeof(proc_t), cmp);
+    qsort(proc, N, sizeof(proc_t), cmp); // TODO: stable sorting
 
     set_high_priority(getpid());
 
@@ -153,7 +152,6 @@ int main(int argc, char *argv[]) {
     int next = -1; // next job to execute
 
     while (1) {
-        // 好想直接複製貼上==
         if (running != -1 && proc[running].T == 0) {
             waitpid(proc[running].pid, NULL, 0);
             proc[running].pid = -1;
