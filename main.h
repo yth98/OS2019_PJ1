@@ -21,12 +21,13 @@
 #define SJF     2
 #define PSJF    3
 
+#define T_YIELD 100
 #define GETTIME __NR_clock_gettime // sys_clock_gettime
 
 typedef struct process {
     pid_t pid;
     char N[64];
-    int R, T;
+    int R, T, i;
 } proc_t;
 
 void err_sys(char *);
@@ -42,6 +43,8 @@ void set_high_priority(pid_t);
 void set_low_priority(pid_t);
 
 int pick_job(proc_t *, int, int, int, int, int);
+
+//void q_insert(proc_t*, int);
 
 int main(int, char **);
 

@@ -8,7 +8,9 @@ void err_sys(char *s) {
 }
 
 int cmp(const void *a, const void *b) {
-    return ((proc_t *) a)->R - ((proc_t *) b)->R;
+    if (((proc_t *) a)->R - ((proc_t *) b)->R)
+        return ((proc_t *) a)->R - ((proc_t *) b)->R;
+    return ((proc_t *) a)->i - ((proc_t *) b)->i;
 }
 
 void unit_t(void) {
@@ -25,6 +27,15 @@ pid_t create_proc(proc_t proc) {
         pid_t mypid = getpid();
         printf("%s %d\n", proc.N, mypid);
 
+        cpu_set_t cmask;
+        CPU_ZERO(&cmask);
+        CPU_SET(1, &cmask); // only use cpu #1
+        if (sched_setaffinity(mypid, sizeof(cmask), &cmask) < 0)
+            err_sys("sched_setaffinity");
+
+        set_low_priority(mypid); // wait until scheduler wakes me
+        sched_yield();
+
         FILE *fp;
         char msg[256];
         struct timespec TS;
@@ -33,8 +44,12 @@ pid_t create_proc(proc_t proc) {
         syscall(GETTIME, CLOCK_REALTIME, &TS);
         sprintf(msg, "[Project1] %d %lld.%.9ld", mypid, (long long)TS.tv_sec, TS.tv_nsec);
 
-        for (int i = 0; i < proc.T; i++)
+        for (int i = 1; i <= proc.T; i++) {
             unit_t();
+            if (i % T_YIELD == 0)
+                printf("%d$%d ",proc.i+1,i);
+                sched_yield(); // switch back to scheduler
+        }
 
         // Record end time
         syscall(GETTIME, CLOCK_REALTIME, &TS);
@@ -52,8 +67,8 @@ pid_t create_proc(proc_t proc) {
 
 void set_high_priority(pid_t pid) {
     struct sched_param param;
-    param.sched_priority = 0;
-    if (sched_setscheduler(pid, SCHED_OTHER, &param) < 0) {
+    param.sched_priority = 99;
+    if (sched_setscheduler(pid, SCHED_FIFO, &param) < 0) {
         fprintf(stderr, "%d\n", pid);
         err_sys("sched_setscheduler (high)");
     }
@@ -69,6 +84,16 @@ void set_low_priority(pid_t pid) {
     }
     return;
 }
+
+/*
+proc_t *queue[64]; // waiting queue
+short q_tail = 0;
+
+void q_insert(proc_t* p, int policy) {
+    queue[q_tail] = p;
+    ++q_tail;
+}
+*/
 
 int pick_job(proc_t *proc, int N, int policy, int time, int last, int running) {
     int pick = -1;
@@ -139,20 +164,23 @@ int main(int argc, char *argv[]) {
     proc = (proc_t *) malloc(N * sizeof(proc_t));
     for (int i = 0; i < N; i++) {
         proc[i].pid = -1;
+        proc[i].i = i;
         scanf("%s %d %d", proc[i].N, &proc[i].R, &proc[i].T);
     }
-    qsort(proc, N, sizeof(proc_t), cmp); // TODO: stable sorting
+    qsort(proc, N, sizeof(proc_t), cmp);
 
     set_high_priority(getpid());
 
     int time = 0; // current time
     int last = 0; // last context switch time
     int running = -1; // running process pid, -1 if no running process
+    int created = 0; // number of created jobs
     int finished = 0; // number of finished jobs
     int next = -1; // next job to execute
 
     while (1) {
         if (running != -1 && proc[running].T == 0) {
+            set_high_priority(proc[running].pid);
             waitpid(proc[running].pid, NULL, 0);
             proc[running].pid = -1;
             running = -1;
@@ -160,22 +188,36 @@ int main(int argc, char *argv[]) {
             if (finished == N)
                 break;
         }
-        for (int i = 0; i < N; i++)
-            if (proc[i].R == time) {
-                proc[i].pid = create_proc(proc[i]);
-                set_low_priority(proc[i].pid);
-            }
+        // create jobs which R has arrived.
+        while (created < N && proc[created].R <= time) {
+            proc[created].pid = create_proc(proc[created]);
+            //q_insert(&proc[created], policy);
+            ++created;
+        }
         next = pick_job(proc, N, policy, time, last, running);
+        //printf("%d:%d ",time,next+1);
         if (next != -1 && next != running) {
-            set_low_priority(proc[running].pid);
-            set_high_priority(proc[next].pid);
             running = next;
             last = time;
         }
-        if (running != -1)
-            proc[running].T -= 1;
-        time += 1;
-        unit_t();
+        if (running != -1) {
+            // run the job for T_YIELD units and switch back
+            // for synchronization
+            set_high_priority(proc[running].pid);
+            sched_yield();
+            set_low_priority(proc[running].pid); // all job should keep inactive in usual
+            if (proc[running].T > T_YIELD) {
+                time += T_YIELD;
+                proc[running].T -= T_YIELD;
+            } else {
+                time += proc[running].T;
+                proc[running].T = 0;
+            }
+        }
+        else { // tick per unit
+            time += 1;
+            unit_t();
+        }
     }
 
     return 0;
