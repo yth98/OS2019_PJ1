@@ -44,8 +44,6 @@ void set_low_priority(pid_t);
 
 int pick_job(proc_t *, int, int, int, int, int);
 
-//void q_insert(proc_t*, int);
-
 int main(int, char **);
 
 #endif

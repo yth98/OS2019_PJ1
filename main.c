@@ -27,15 +27,6 @@ pid_t create_proc(proc_t proc) {
         pid_t mypid = getpid();
         printf("%s %d\n", proc.N, mypid);
 
-        cpu_set_t cmask;
-        CPU_ZERO(&cmask);
-        CPU_SET(1, &cmask); // only use cpu #1
-        if (sched_setaffinity(mypid, sizeof(cmask), &cmask) < 0)
-            err_sys("sched_setaffinity");
-
-        set_low_priority(mypid); // wait until scheduler wakes me
-        sched_yield();
-
         FILE *fp;
         char msg[256];
         struct timespec TS;
@@ -44,11 +35,16 @@ pid_t create_proc(proc_t proc) {
         syscall(GETTIME, CLOCK_REALTIME, &TS);
         sprintf(msg, "[Project1] %d %lld.%.9ld", mypid, (long long)TS.tv_sec, TS.tv_nsec);
 
+        set_low_priority(mypid); // wait until scheduler wakes me
+        sched_yield();
+
         for (int i = 1; i <= proc.T; i++) {
             unit_t();
-            if (i % T_YIELD == 0)
-                printf("%d$%d ",proc.i+1,i);
+            if (i % T_YIELD == 0) {
+                //printf("%d$%d ",proc.i+1,i);
+                //fflush(stdout);
                 sched_yield(); // switch back to scheduler
+            }
         }
 
         // Record end time
@@ -77,23 +73,13 @@ void set_high_priority(pid_t pid) {
 
 void set_low_priority(pid_t pid) {
     struct sched_param param;
-    param.sched_priority = 0;
-    if (sched_setscheduler(pid, SCHED_IDLE, &param) < 0) {
+    param.sched_priority = 1;
+    if (sched_setscheduler(pid, SCHED_FIFO, &param) < 0) {
         fprintf(stderr, "%d\n", pid);
         err_sys("sched_setscheduler (low)");
     }
     return;
 }
-
-/*
-proc_t *queue[64]; // waiting queue
-short q_tail = 0;
-
-void q_insert(proc_t* p, int policy) {
-    queue[q_tail] = p;
-    ++q_tail;
-}
-*/
 
 int pick_job(proc_t *proc, int N, int policy, int time, int last, int running) {
     int pick = -1;
@@ -195,7 +181,10 @@ int main(int argc, char *argv[]) {
             ++created;
         }
         next = pick_job(proc, N, policy, time, last, running);
-        //printf("%d:%d ",time,next+1);
+        /* if (time % T_YIELD == 0) {
+            printf("%d:%d\n",time,next+1);
+            fflush(stdout);
+        } */
         if (next != -1 && next != running) {
             running = next;
             last = time;
